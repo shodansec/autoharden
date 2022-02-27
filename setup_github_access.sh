@@ -25,6 +25,8 @@ git config --global user.signingkey $gpgtoken
 if [ -r ~/.bash_profile ]; then echo 'export GPG_TTY=$(tty)' >> ~/.bash_profile; \
   else echo 'export GPG_TTY=$(tty)' >> ~/.profile; fi
 
+git config --global commit.gpgsign true
+
 echo "Enter the following gpg key to your github account:"
 echo "\n"
 
