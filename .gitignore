@@ -127,3 +127,16 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Remove the possibility of checking in secure boot keys, certificats,
+# and binaries generated
+*PK*
+*noPK*
+*DB*
+*KEK*
+*DBX*
+*dbx*
+*db*
+*vmlinuz*
+*.efi
+*.EFI
