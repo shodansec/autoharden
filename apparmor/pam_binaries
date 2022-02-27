@@ -1,0 +1,26 @@
+ #
+ # This file contains the policy for the confined binaries that use
+ # libpam-apparmor.
+ #
+ #include <tunables/global>
+ /bin/su {
+    #include <abstractions/authentication>
+    #include <abstractions/base>
+    #include <abstractions/nameservice>
+    # Include the file with all of our username/group to role mappings
+    #include <pam/mappings>
+    capability chown,
+    capability setgid,
+    capability setuid,
+    owner /etc/environment r,
+    owner /etc/shells r,
+    owner /etc/default/locale r,
+    owner @{HOMEDIRS}/*/.Xauthority rw,
+    owner @{HOMEDIRS}/*/.Xauthority-c w,
+    owner @{HOMEDIRS}/*/.Xauthority-l w,
+    @{HOME}/.xauth* rw,
+    owner @{PROC}/sys/kernel/ngroups_max r,
+    /usr/bin/xauth rix,
+    owner /var/run/utmp rwk,
+ }
+

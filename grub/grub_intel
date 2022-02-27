@@ -1,0 +1,38 @@
+# If you change this file, run 'update-grub' afterwards to update
+# /boot/grub/grub.cfg.
+# For full documentation of the options in this file, see:
+#   info -f grub -n 'Simple configuration'
+
+GRUB_DEFAULT=0
+GRUB_TIMEOUT_STYLE=hidden
+GRUB_TIMEOUT=0
+GRUB_DISTRIBUTOR=`lsb_release -i -s 2> /dev/null || echo Debian`
+GRUB_CMDLINE_LINUX_DEFAULT="quiet splash intel_iommu=on iommu=pt iommu.passthrough=1 kvm-intel.nested=1 kvm-intel.unrestricted_guest=0 kvm-intel.vmentry_l1d_flush=always kvm.nx_huge_pages=force pti=on page_poison=1 slub_debug=FZP slab_nomerge lockdown=confidentiality init_on_free=1 init_on_alloc=1 extra_latent_entropy=1 lsm=landlock,lockdown,yama,apparmor apparmor=1 security=apparmor vsyscall=none mce=0 random.trust_cpu=on page_alloc.shuffle=1 kernel.maps_protect=1 mitigations=auto,nosmt libata.allow_tpm=1 module.sigenforce=1 module_blacklist='ipv6,firewire,firewire-core,can,atm,mei,dccp,sctp,rds,tipc,n-hdlc,ax25,netrom,x25,rose,decnet,econet,af_802154,ipx,appletalk,psnap,p8023,p8022,cramfs,freevxfs,jffs2,udf,cifs,nfs,nfsv3,nfsv4,gfs2,vivid,bluetooth,btusb,uvcvideo,snd_hda_intel,qnx4,jfs' integrity_audit=1 rdrand=force spectre_v2=on spec_store_bypass_disable=on tsx=off tsx_async_abort=full,nosmt mds=full,nosmt l1tf=full,force debugfs=off oops=panic ipv6.disable=1"
+GRUB_CMDLINE_LINUX=""
+
+# Other grub cmdline options:
+#force_tpm2_legacy_log=true
+#save_vtd=true
+
+
+# Uncomment to enable BadRAM filtering, modify to suit your needs
+# This works with Linux (no patch required) and with any kernel that obtains
+# the memory map information from GRUB (GNU Mach, kernel of FreeBSD ...)
+#GRUB_BADRAM="0x01234567,0xfefefefe,0x89abcdef,0xefefefef"
+
+# Uncomment to disable graphical terminal (grub-pc only)
+#GRUB_TERMINAL=console
+
+# The resolution used on graphical terminal
+# note that you can use only modes which your graphic card supports via VBE
+# you can see them in real GRUB with the command `vbeinfo'
+#GRUB_GFXMODE=640x480
+
+# Uncomment if you don't want GRUB to pass "root=UUID=xxx" parameter to Linux
+#GRUB_DISABLE_LINUX_UUID=true
+
+# Uncomment to disable generation of recovery mode menu entries
+#GRUB_DISABLE_RECOVERY="true"
+
+# Uncomment to get a beep at grub start
+#GRUB_INIT_TUNE="480 440 1"

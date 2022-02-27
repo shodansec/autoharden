@@ -140,3 +140,6 @@ dmypy.json
 *vmlinuz*
 *.efi
 *.EFI
+
+# Ignore scratch
+scratch
