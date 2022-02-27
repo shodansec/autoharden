@@ -1,0 +1,3 @@
+[submodule "efivar"]
+	path = efivar
+	url = https://github.com/rhboot/efivar.git
