@@ -13,6 +13,3 @@
 [submodule "swtpm"]
 	path = swtpm
 	url = https://github.com/stefanberger/swtpm.git
-[submodule "grub2"]
-	path = grub2
-	url = https://github.com/rhboot/grub2.git
