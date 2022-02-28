@@ -10,3 +10,6 @@
 [submodule "swtpm"]
 	path = swtpm
 	url = https://github.com/stefanberger/swtpm.git
+[submodule "efitools"]
+	path = efitools
+	url = git@github.com:vathpela/efitools.git

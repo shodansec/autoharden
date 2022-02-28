@@ -1,26 +1,28 @@
-#!/usr/bin/bash
+#!/bin/bash
 
 # Filesystem Permisions
 chmod -R 700 /root
 chmod 700 /boot
 
-# Build Tools
-apt install -y build-essential git-crypt automake libtool m4 mlocate net-tools ssh
+apt update
+apt upgrade -y
+
+# Install ALL Build and Development Packages
+apt install -y build-essential automake socat autoconf libtss2-tcti-tabrmd-dev dh-autoreconf libtasn1-dev libtss2-dev libcurl4-gnutls-dev python3-setuptools libtss2-tcti-tabrmd0 libtss2-esys0 libtasn1-6-dev libtool tpm2-tools git-crypt libssl-dev gnutls-dev gnutls-bin libseccomp-dev iproute2 ssh gawk libjansson-dev mlocate libp11-dev patch libgnutls28-dev softhsm2 python3-twisted flex tpm2-initramfs-tool libglib2.0-dev libgmp-dev m4 net-tools libxml2-dev dpkg-dev expect binutils gettext bison debhelper gcc libjson-glib-dev librtlsdr-dev pkg-config libfuse-dev dh-exec libdevmapper-dev libdevmapper-event1.02.1 libdevmapper1.02.1 libfreetype-dev dh-buildinfo xz-utils liblzma-dev lzma-dev gnulib byacc libbison-dev
+
 systemctl enable --now ssh
 
 ./setup_github_access.sh
+
+git submodule update --init --recursive
 
 # Network Security
 ufw enable
 ufw default deny incoming
 ufw reload
 
-cd /tmp
-git clone https://github.com/hectorm/hblock
 cd hblock
 make install
-cd /tmp
-rm -rf hblock
 hblock
 echo "59 * * * * /usr/local/bin/hblock" >> /var/spool/cron/crontabs/root
 cd /root/autoharden
@@ -30,7 +32,7 @@ apt install -y chkrootkit rkhunter lynis checksec
 rkhunter --propupd
 
 # Virtualization
-apt install -y virt-manager
+apt install -y virt-manager systemd-container machinectl
 systemctl enable --now libvirtd
 echo "Enter the name of the non-root admin user: "
 read username
@@ -41,17 +43,20 @@ usermod -aG libvirt $username
 apt remove -y avahi-daemon cups cups-browsed
 
 # Yubikey
-apt-get install libpam-u2f -y
+apt install libpam-u2f -y
 
 # Kernel Security
-cat /root/autoharden/sysctl.d/sysctl-baseline.conf >> /etc/sysctl.conf
+cat sysctl.d/sysctl-baseline.conf >> /etc/sysctl.conf
 sysctl -p
 
+# Work needs to be done to determine which kernel parameters in sysctl.d/network.conf affect vpn 
+# in any negative way. For now, don't set them until we are sure they will not affect vpn
+# connections in any negative way.
 echo "Will you be using a vpn on this host? (y/n): "
 read use_vpn
 
 if [ $use_vpn = "n" ]; then
-	cat /root/autoharden/sysctl.d/network.conf >> /etc/sysctl.conf
+	cat sysctl.d/network.conf >> /etc/sysctl.conf
 fi
 
 echo "Enter the desired value kernel.yama.ptrace_scope. Use 3 if you do not require debugging, or select 1 if you require debuggin tools (such as gdb): "
@@ -66,7 +71,7 @@ apt install -y apparmor-profiles apparmor-profiles-extra
 apt install -y libpam-apparmor dh-apparmor apparmor-utils apparmor-notify apparmor-easyprof
 systemctl enable --now apparmor
 echo "session optional     pam_apparmor.so order=user,group,default" >> /etc/pam.d/su
-cp -r /root/autoharden/apparmor/* /etc/apparmor.d/
+cp -r apparmor/* /etc/apparmor.d/
 apparmor_parser -r -T -W /etc/apparmor.d/pam_binaries /etc/apparmor.d/pam_roles
 
 # Hardened Firefox user.js
@@ -84,7 +89,7 @@ wget https://www.whonix.org/patrick.asc
 chmod -R 700 /root
 apt-key --keyring /etc/apt/trusted.gpg.d/whonix.gpg add $(pwd)/patrick.asc
 echo "deb https://deb.whonix.org bullseye main contrib non-free" | tee /etc/apt/sources.list.d/whonix.list
-apt-get update
+apt update
 
 # Add Kicksecure Repo
 wget https://www.kicksecure.com/derivative.asc
@@ -101,7 +106,7 @@ read install_lkrg
 
 if [ $install_lkrg = "y" ]; then
 	apt install lkrg-dkms linux-headers-$(uname -r)
-	cat /root/autoharden/sysctl.d/lkrg-sysctl.conf >> /etc/sysctl.conf
+	cat sysctl.d/lkrg-sysctl.conf >> /etc/sysctl.conf
 	sysctl -p
 fi
 
@@ -122,21 +127,22 @@ apt install -y kloak
 apt install -y jitterentropy-rngd
 systemctl enable --now jitterentropy-rngd
 
-apt install -y tpm2-tools tpm2-initramfs-tool libtss2-tcti-tabrmd0 libtss2-tcti-tabrmd-dev libtss2-esys0 libtss2-dev
-
 apt install -y tpm2-abrmd
 systemctl stop tpm2-abrmd
 
-tpm2_getrandom --hex 16
+echo "Atempting to read random bytes from a tpm device with 'tpm2_getrandom --hex 16'. . ."
+echo "If any errors occur, please disable tpm usage in /etc/systemd/system/rngd.service"
+echo "See 'rngd --help and rngd -l for a list of devices that will as entropy sources on your device.\n"
+echo $(tpm2_getrandom --hex 16)
+systemctl enable --now tpm2-abrmd
 
-cd /tmp
+# Export hardened compiler flags
+export CPPFLAGS=$(dpkg-buildflags --get CPPFLAGS)
+export CFLAGS=$(dpkg-buildflags --get CFLAGS)
+export CXXFLAGS=$(dpkg-buildflags --get CXXFLAGS)
+export LDFLAGS=$(dpkg-buildflags --get LDFLAGS)
 
-apt install -y build-essential automake libtool m4 libcurl4-gnutls-dev libxml2-dev
-apt install -y libjansson-dev libp11-dev librtlsdr-dev
-
-wget https://github.com/nhorman/rng-tools/archive/refs/tags/v6.15.zip
-unzip v6.15.zip
-cd rng-tools-6.15
+cd rng-tools
 ./autogen.sh
 ./configure
 make -j8
@@ -145,80 +151,148 @@ find $(pwd) -name rngd.service -type f -exec sed -i 's/ExecStart=\/usr\/sbin\/rn
 cp rngd.service /etc/systemd/system
 systemctl enable --now rngd
 
-cd /tmp
-rm -rf rng-tools-6.15
-
 # Install swtpm
-apt install -y build-essential git-crypt
-apt-get -y install automake autoconf libtool gcc build-essential libssl-dev dh-exec pkg-config dh-autoreconf
-
-git clone https://github.com/stefanberger/libtpms
 cd libtpms
 ./autogen.sh --with-openssl --prefix=/usr --with-tpm2
-
 make -j8
 make check
 make install
-cd /tmp
-rm -rf libtpms
+cd ..
 
-git clone https://github.com/stefanberger/swtpm
 cd swtpm
-
-apt-get install -y dh-autoreconf libssl-dev libtasn1-6-dev pkg-config
-apt install -y net-tools iproute2 libjson-glib-dev
-apt install libgnutls28-dev expect gawk socat libseccomp-dev make -y
-apt-get -y install dpkg-dev debhelper libssl-dev libtool net-tools libfuse-dev libglib2.0-dev libgmp-dev expect libtasn1-dev socat python3-twisted gnutls-dev gnutls-bin  libjson-glib-dev python3-setuptools softhsm2 libseccomp-dev gawk
-
 ./autogen.sh --with-openssl --prefix=/usr --libdir=/lib64
 make -j8
 make -j8 check
 make install
-cd /tmp
-rm -rf swtpm-0.7.0
+cd ..
 
 chmod -R 700 /root
 
+echo "Do you want to install dell-recovery-bootloader? (y/n): "
+read install_dell_recovery
+
+if [ $install_dell_recovery = "y" ]; then
+	apt install -y dell-recovery-bootloader 
+fi
+
 
 # Custom Secure Boot Key
-cd /root/autoharden/secureboot
-apt install -y efivar efitools
+echo "Would you like to customize your secure boot keys/certs? (y/n): "
+echo "Note: if you select 'y', then the system packages for grub2 will"
+echo "be removed, and the source code for grub2 will be installed instead.\n"
+read custom_sb
 
-# Backup original secure boot keys and certs etc:
-efi-readvar -v PK -o PK.old.esl
-efi-readvar -v KEK -o KEK.old.esl
-efi-readvar -v db -o db.old.esl
-efi-readvar -v dbx -o dbx.old.esl
+if [ $custom_sb = "y" ]; then
+	apt install -y efivar pesign
 
-./mkkeys.sh
-mokutil --import DB.cer
-./sign-efi.sh /usr/share/efitools/efi/KeyTool.efi
-cp /usr/share/efitools/efi/KeyTool.efi /boot/efi/EFI/BOOT/
-cp /usr/share/efitools/efi/KeyTool.efi /boot/efi/EFI/ubuntu/
-./sign-efi.sh /boot/efi/EFI/BOOT/BOOTX64.EFI
-./sign-efi.sh /boot/efi/EFI/BOOT/fbx64.efi
-./sign-efi.sh /boot/efi/EFI/BOOT/mmx64.efi
-./sign-efi.sh /boot/efi/EFI/ubuntu/grubx64.efi
-./sign-efi.sh /boot/efi/EFI/ubuntu/mmx64.efi
-./sign-efi.sh /boot/efi/EFI/ubuntu/shimx64.efi
-./sign-efi.sh /boot/grub/x86_64-efi/core.efi
-./sign-efi.sh /boot/grub/x86_64-efi/grub.efi
-./sign-efi.sh /boot/vmlinuz.old
-./sign-efi.sh /boot/vmlinuz-5.13.0-30-generic
-./sign-efi.sh /boot/vmlinuz
-./sign-efi.sh /boot/vmlinuz-5.11.0-27-generic
-cp *.cer /boot/efi/EFI/ubuntu
-cp *.auth /boot/efi/EFI/ubuntu
-cp *.esl /boot/efi/EFI/ubuntu
-cp *.crt /boot/efi/EFI/ubuntu
-cp *.key /boot/efi/EFI/ubuntu
-cp *.txt /boot/efi/EFI/ubuntu
+	cd efitools
+	echo "Backing up old secure boot certificates in efivar submodule. . . \n"
+	# Backup original secure boot keys certificats etc:
+	efi-readvar -v PK -o PK.old.esl
+	efi-readvar -v KEK -o KEK.old.esl
+	efi-readvar -v db -o db.old.esl
+	efi-readvar -v dbx -o dbx.old.esl
+	
+	make clean
+	make all
+	rm LockDown*efi LockDown.so LockDown.o
+	
 
-cp *.cer /boot/efi/EFI/BOOT
-cp *.auth /boot/efi/EFI/BOOT
-cp *.esl /boot/efi/EFI/BOOT
-cp *.crt /boot/efi/EFI/BOOT
-cp *.key /boot/efi/EFI/BOOT
+	# Now create the keys:
+	openssl req -new -x509 -newkey rsa:2048 -subj "/CN=PK/" -keyout PK.key -out PK.crt -days 3650 -nodes -sha256
+	openssl req -new -x509 -newkey rsa:2048 -subj "/CN=KEK/" -keyout KEK.key -out KEK.crt -days 3650 -nodes -sha256
+	openssl req -new -x509 -newkey rsa:2048 -subj "/CN=DB/" -keyout DB.key -out DB.crt -days 3650 -nodes -sha256
+	openssl req -new -x509 -newkey rsa:2048 -subj "/CN=DBX/" -keyout DBX.key -out DBX.crt -days 3650 -nodes -sha256
+	
+	cert-to-sig-list PK.crt PK.esl
+	sign-efi-sig-list -k PK.key -c PK.crt PK PK.esl PK.auth
+	
+	cert-to-sig-list KEK.crt KEK.esl
+	sign-efi-sig-list -k KEK.key -c KEK.crt KEK KEK.esl KEK.auth
+	
+	cert-to-sig-list DB.crt DB.esl
+	sign-efi-sig-list -k DB.key -c DB.crt db DB.esl DB.auth
+	
+	cert-to-sig-list DBX.crt DBX.esl
+	sign-efi-sig-list -k DBX.key -c DBX.crt dbx DBX.esl DBX.auth
+	
+	rm -f noPK.esl
+	touch noPK.esl
+	sign-efi-sig-list -t "$(date --date='1 second' +'%Y-%m-%d %H:%M:%S')" -k PK.key -c PK.crt PK PK.esl PK.auth
+	sign-efi-sig-list -t "$(date --date='1 second' +'%Y-%m-%d %H:%M:%S')" -k PK.key -c PK.crt PK noPK.esl noPK.auth
+	
+	make install
+
+
+	# Change key and cert permissions
+	chmod 0600 PK*
+	chmod 0600 noPK*
+	chmod 0600 KEK*
+	chmod 0600 DB*
+	chmod 0600 DBX*
+	chmod 0400 *.old.esl
+	
+
+	# Sign efi binaries generated by efivar submodule:
+	echo "Enter the path where you wish to sign and install new efi binaries: "
+	echo "Examples: /boot/efi/EFI/ubuntu and /boot/efi/EFI/BOOT\n"
+	read boot_dir
+	cp /usr/share/efitools/efi/*.efi $efi_boot_dir
+	
+	echo "Please enter the directory where you would like your linux kernel(s) signed: "
+	echo "Example: /boot"
+	read boot_dir
+	
+	# Strip existing signitures
+	echo "Would you like to strip existing signitures from efi binaries in $boot_dir before they are signed with the new keys? (y/n): "
+	echo "Note: it is recommended not to do this until after you have verified that"
+	echo "you can boot with the newly enrolled keys.\n"
+	read strip_sig
+
+	if [ $strip_sig = "y" ]; then
+		find $boot_dir -name *.efi -type f | xargs -I "^" pesign --signature-number 0 --remove-signature -i "^"
+		find $boot_dir -name *.efi -type f | xargs -I "^" sbverify --cert DB.crt "^"
+		
+		find $boot_dir -name *.EFI -type f | xargs -I "^" pesign --signature-number 0 --remove-signature -i "^"
+		find $boot_dir -name *.EFI -type f | xargs -I "^" sbverify --cert DB.crt "^"
+		
+		find $boot_dir -name vmlinuz* -type f | xargs -I "^" pesign --signature-number 0 --remove-signature -i "^"
+		find $boot_dir -name vmlinuz* -type f | xargs -I "^" sbverify --cert DB.crt "^"
+	fi
+	
+	
+	find $boot_dir -name *.efi -type f | xargs -I "^" sbsign --key DB.key --cert DB.crt --output "^" "^"
+	find $boot_dir -name *.efi -type f | xargs -I "^" sbverify --cert DB.crt "^"
+	
+	find $boot_dir -name *.EFI -type f | xargs -I "^" sbsign --key DB.key --cert DB.crt --output "^" "^"
+	find $boot_dir -name *.EFI -type f | xargs -I "^" sbverify --cert DB.crt "^"
+	
+	
+	find $boot_dir -name vmlinuz* -type f | xargs -I "^" sbsign --key DB.key --cert DB.crt --output "^" "^"
+	find $boot_dir -name vmlinuz* -type f | xargs -I "^" sbverify --cert DB.crt "^"
+	
+	UpdateVars dbx DBX.auth
+	UpdateVars db DB.auth
+	UpdateVars KEK KEK.auth
+	UpdateVars PK PK.auth
+	
+	echo "Would you like to copy your keys to $efi_boot_dir for uefi enrollment"
+	echo "in UEFI firmware settings? (y/n): "
+	echo "\n"
+	read cpy_keys
+	
+	if [ $cpy_keys = "y" ]; then
+		cp *.cer $efi_boot_dir
+		cp *.auth $efi_boot_dir
+		cp *.esl $efi_boot_dir
+		cp *.crt $efi_boot_dir
+		cp *.key $efi_boot_dir
+	fi
+	
+	cd ..
+	
+fi
+
 cp *.txt /boot/efi/EFI/BOOT
 
 # Filesystem and Integrity Monitoring
