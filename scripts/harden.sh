@@ -8,7 +8,7 @@ apt update
 apt upgrade -y
 
 # Install ALL Build and Development Packages
-apt install -y build-essential automake socat autoconf libtss2-tcti-tabrmd-dev dh-autoreconf libtasn1-dev libtss2-dev libcurl4-gnutls-dev python3-setuptools libtss2-tcti-tabrmd0 libtss2-esys0 libtasn1-6-dev libtool tpm2-tools git-crypt libssl-dev gnutls-dev gnutls-bin libseccomp-dev iproute2 ssh gawk libjansson-dev mlocate libp11-dev patch libgnutls28-dev softhsm2 python3-twisted flex tpm2-initramfs-tool libglib2.0-dev libgmp-dev m4 net-tools libxml2-dev dpkg-dev expect binutils gettext bison debhelper gcc libjson-glib-dev librtlsdr-dev pkg-config libfuse-dev dh-exec libdevmapper-dev libdevmapper-event1.02.1 libdevmapper1.02.1 libfreetype-dev dh-buildinfo xz-utils liblzma-dev lzma-dev gnulib byacc libbison-dev
+apt install -y build-essential automake socat autoconf libtss2-tcti-tabrmd-dev dh-autoreconf libtasn1-dev libtss2-dev libcurl4-gnutls-dev python3-setuptools libtss2-tcti-tabrmd0 libtss2-esys0 libtasn1-6-dev libtool tpm2-tools git-crypt libssl-dev gnutls-dev gnutls-bin libseccomp-dev iproute2 ssh gawk libjansson-dev mlocate libp11-dev patch libgnutls28-dev softhsm2 python3-twisted flex tpm2-initramfs-tool libglib2.0-dev libgmp-dev m4 net-tools libxml2-dev dpkg-dev expect binutils gettext bison debhelper gcc libjson-glib-dev librtlsdr-dev pkg-config libfuse-dev dh-exec libdevmapper-dev libdevmapper-event1.02.1 libdevmapper1.02.1 libfreetype-dev dh-buildinfo xz-utils liblzma-dev lzma-dev gnulib byacc libbison-dev libcap-dev libefiboot-dev libefivar-dev
 
 systemctl enable --now ssh
 

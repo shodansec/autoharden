@@ -143,3 +143,6 @@ dmypy.json
 
 # Ignore scratch
 scratch
+
+# Ignore log directory
+log
