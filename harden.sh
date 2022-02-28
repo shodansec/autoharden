@@ -32,7 +32,7 @@ apt install -y chkrootkit rkhunter lynis checksec
 rkhunter --propupd
 
 # Virtualization
-apt install -y virt-manager systemd-container machinectl
+apt install -y virt-manager systemd-container
 systemctl enable --now libvirtd
 echo "Enter the name of the non-root admin user: "
 read username
