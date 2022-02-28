@@ -40,3 +40,5 @@ eval "$(ssh-agent -s)"
 echo "Add the following public ssh key to your github profile:"
 echo "\n"
 cat ~/.ssh/id_rsa.pub
+
+git submodule update --init --recursive

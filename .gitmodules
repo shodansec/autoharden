@@ -1,3 +1,18 @@
 [submodule "efivar"]
 	path = efivar
 	url = https://github.com/rhboot/efivar.git
+[submodule "hblock"]
+	path = hblock
+	url = https://github.com/hectorm/hblock.git
+[submodule "rng-tools"]
+	path = rng-tools
+	url = https://github.com/nhorman/rng-tools.git
+[submodule "libtpms"]
+	path = libtpms
+	url = https://github.com/stefanberger/libtpms.git
+[submodule "swtpm"]
+	path = swtpm
+	url = https://github.com/stefanberger/swtpm.git
+[submodule "grub2"]
+	path = grub2
+	url = https://github.com/rhboot/grub2.git
