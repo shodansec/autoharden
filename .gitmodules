@@ -1,6 +1,3 @@
-[submodule "efivar"]
-	path = efivar
-	url = https://github.com/rhboot/efivar.git
 [submodule "hblock"]
 	path = hblock
 	url = https://github.com/hectorm/hblock.git
