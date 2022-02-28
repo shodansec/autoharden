@@ -8,7 +8,7 @@ apt update
 apt upgrade -y
 
 # Install ALL Build and Development Packages
-apt install -y build-essential automake socat autoconf libtss2-tcti-tabrmd-dev dh-autoreconf libtasn1-dev libtss2-dev libcurl4-gnutls-dev python3-setuptools libtss2-tcti-tabrmd0 libtss2-esys0 libtasn1-6-dev libtool tpm2-tools git-crypt libssl-dev gnutls-dev gnutls-bin libseccomp-dev iproute2 ssh gawk libjansson-dev mlocate libp11-dev patch libgnutls28-dev softhsm2 python3-twisted flex tpm2-initramfs-tool libglib2.0-dev libgmp-dev m4 net-tools libxml2-dev dpkg-dev expect binutils gettext bison debhelper gcc libjson-glib-dev librtlsdr-dev pkg-config libfuse-dev dh-exec libdevmapper-dev libdevmapper-event1.02.1 libdevmapper1.02.1 libfreetype-dev dh-buildinfo xz-utils liblzma-dev lzma-dev gnulib byacc libbison-dev libcap-dev libefiboot-dev libefivar-dev
+apt install -y build-essential automake socat autoconf libtss2-tcti-tabrmd-dev dh-autoreconf libtasn1-dev libtss2-dev libcurl4-gnutls-dev python3-setuptools libtss2-tcti-tabrmd0 libtss2-esys0 libtasn1-6-dev libtool tpm2-tools git-crypt libssl-dev gnutls-dev gnutls-bin libseccomp-dev iproute2 ssh gawk libjansson-dev mlocate libp11-dev patch libgnutls28-dev softhsm2 python3-twisted flex tpm2-initramfs-tool libglib2.0-dev libgmp-dev m4 net-tools libxml2-dev dpkg-dev expect binutils gettext bison debhelper gcc libjson-glib-dev librtlsdr-dev pkg-config libfuse-dev dh-exec libdevmapper-dev libdevmapper-event1.02.1 libdevmapper1.02.1 libfreetype-dev dh-buildinfo xz-utils liblzma-dev lzma-dev gnulib byacc libbison-dev libcap-dev libefiboot-dev libefivar-dev gnu-efi perl libfile-slurp-perl help2man
 
 systemctl enable --now ssh
 
@@ -93,7 +93,7 @@ systemctl stop tpm2-abrmd
 
 echo "Atempting to read random bytes from a tpm device with 'tpm2_getrandom --hex 16'. . ."
 echo "If any errors occur, please disable tpm usage in /etc/systemd/system/rngd.service"
-echo "See 'rngd --help and rngd -l for a list of devices that will as entropy sources on your device.\n"
+echo "See 'rngd --help and rngd -l for a list of devices that will as entropy sources on your device."
 echo $(tpm2_getrandom --hex 16)
 systemctl enable --now tpm2-abrmd
 
@@ -140,15 +140,13 @@ fi
 
 # Custom Secure Boot Key
 echo "Would you like to customize your secure boot keys/certs? (y/n): "
-echo "Note: if you select 'y', then the system packages for grub2 will"
-echo "be removed, and the source code for grub2 will be installed instead.\n"
 read custom_sb
 
 if [ $custom_sb = "y" ]; then
 	apt install -y efivar pesign
 
 	cd efitools
-	echo "Backing up old secure boot certificates in efivar submodule. . . \n"
+	echo "Backing up old secure boot certificates in efivar submodule. . . "
 	# Backup original secure boot keys certificats etc:
 	mkdir ../old_secure_boot_keys
 	efi-readvar -v PK -o ../old_secure_boot_keys/PK.old.esl
@@ -163,27 +161,24 @@ if [ $custom_sb = "y" ]; then
 	
 
 	# Now create the keys:
-	openssl req -new -x509 -newkey rsa:2048 -subj "/CN=PK/" -keyout PK.key -out PK.crt -days 3650 -nodes -sha256
-	openssl req -new -x509 -newkey rsa:2048 -subj "/CN=KEK/" -keyout KEK.key -out KEK.crt -days 3650 -nodes -sha256
-	openssl req -new -x509 -newkey rsa:2048 -subj "/CN=DB/" -keyout DB.key -out DB.crt -days 3650 -nodes -sha256
-	openssl req -new -x509 -newkey rsa:2048 -subj "/CN=DBX/" -keyout DBX.key -out DBX.crt -days 3650 -nodes -sha256
+	openssl req -new -x509 -newkey rsa:2048 -subj "/CN=PK/" -keyout PK-update.key -out PK-update.crt -days 3650 -nodes -sha256
+	openssl req -new -x509 -newkey rsa:2048 -subj "/CN=KEK/" -keyout KEK-update.key -out KEK-update.crt -days 3650 -nodes -sha256
+	openssl req -new -x509 -newkey rsa:2048 -subj "/CN=DB/" -keyout DB-update.key -out DB-update.crt -days 3650 -nodes -sha256
 	
-	cert-to-sig-list PK.crt PK.esl
-	sign-efi-sig-list -k PK.key -c PK.crt PK PK.esl PK.auth
+	cert-to-sig-list PK-update.crt PK-update.esl
+	sign-efi-sig-list -k PK-update.key -c PK-update.crt PK PK-update.esl PK-update.auth
 	
-	cert-to-sig-list KEK.crt KEK.esl
-	sign-efi-sig-list -k KEK.key -c KEK.crt KEK KEK.esl KEK.auth
+	cert-to-sig-list KEK-update.crt KEK-update.esl
+	sign-efi-sig-list -k KEK-update.key -c KEK-update.crt KEK KEK-update.esl KEK-update.auth
 	
-	cert-to-sig-list DB.crt DB.esl
-	sign-efi-sig-list -k DB.key -c DB.crt db DB.esl DB.auth
+	cert-to-sig-list DB-update.crt DB-update.esl
+	sign-efi-sig-list -k DB-update.key -c DB-update.crt db DB-update.esl DB-update.auth
 	
-	cert-to-sig-list DBX.crt DBX.esl
-	sign-efi-sig-list -k DBX.key -c DBX.crt dbx DBX.esl DBX.auth
 	
-	rm -f noPK.esl
-	touch noPK.esl
-	sign-efi-sig-list -t "$(date --date='1 second' +'%Y-%m-%d %H:%M:%S')" -k PK.key -c PK.crt PK PK.esl PK.auth
-	sign-efi-sig-list -t "$(date --date='1 second' +'%Y-%m-%d %H:%M:%S')" -k PK.key -c PK.crt PK noPK.esl noPK.auth
+	rm -f noPK-update.esl
+	touch noPK-update.esl
+	sign-efi-sig-list -k PK-update.key -c PK-update.crt PK PK-update.esl PK-update.auth
+	sign-efi-sig-list -k PK-update.key -c PK-update.crt PK noPK-update.esl noPK-update.auth
 	
 	make install
 
@@ -193,13 +188,12 @@ if [ $custom_sb = "y" ]; then
 	chmod 0600 noPK*
 	chmod 0600 KEK*
 	chmod 0600 DB*
-	chmod 0600 DBX*
 	
 
 	# Sign efi binaries generated by efivar submodule:
 	echo "Enter the path where you wish to sign and install new efi binaries: "
-	echo "Examples: /boot/efi/EFI/ubuntu and /boot/efi/EFI/BOOT\n"
-	read boot_dir
+	echo "Examples: /boot/efi/EFI/ubuntu and /boot/efi/EFI/BOOT"
+	read efi_boot_dir
 	cp /usr/share/efitools/efi/*.efi $efi_boot_dir
 	
 	echo "Please enter the directory where you would like your linux kernel(s) signed: "
@@ -209,43 +203,43 @@ if [ $custom_sb = "y" ]; then
 	# Strip existing signitures
 	echo "Would you like to strip existing signitures from efi binaries in $boot_dir before they are signed with the new keys? (y/n): "
 	echo "Note: it is recommended not to do this until after you have verified that"
-	echo "you can boot with the newly enrolled keys.\n"
+	echo "you can boot with the newly enrolled keys."
 	read strip_sig
 
 	if [ $strip_sig = "y" ]; then
 		find $boot_dir -name *.efi -type f | xargs -I "^" pesign --signature-number 0 --remove-signature -i "^"
-		find $boot_dir -name *.efi -type f | xargs -I "^" sbverify --cert DB.crt "^"
+		find $boot_dir -name *.efi -type f | xargs -I "^" sbverify --cert DB-update.crt "^"
 		
 		find $boot_dir -name *.EFI -type f | xargs -I "^" pesign --signature-number 0 --remove-signature -i "^"
-		find $boot_dir -name *.EFI -type f | xargs -I "^" sbverify --cert DB.crt "^"
+		find $boot_dir -name *.EFI -type f | xargs -I "^" sbverify --cert DB-update.crt "^"
 		
 		find $boot_dir -name vmlinuz* -type f | xargs -I "^" pesign --signature-number 0 --remove-signature -i "^"
-		find $boot_dir -name vmlinuz* -type f | xargs -I "^" sbverify --cert DB.crt "^"
+		find $boot_dir -name vmlinuz* -type f | xargs -I "^" sbverify --cert DB-update.crt "^"
 	fi
 	
 	
-	find $boot_dir -name *.efi -type f | xargs -I "^" sbsign --key DB.key --cert DB.crt --output "^" "^"
-	find $boot_dir -name *.efi -type f | xargs -I "^" sbverify --cert DB.crt "^"
+	find $boot_dir -name *.efi -type f | xargs -I "^" sbsign --key DB-update.key --cert DB-update.crt --output "^" "^"
+	find $boot_dir -name *.efi -type f | xargs -I "^" sbverify --cert DB-update.crt "^"
 	
-	find $boot_dir -name *.EFI -type f | xargs -I "^" sbsign --key DB.key --cert DB.crt --output "^" "^"
-	find $boot_dir -name *.EFI -type f | xargs -I "^" sbverify --cert DB.crt "^"
+	find $boot_dir -name *.EFI -type f | xargs -I "^" sbsign --key DB-update.key --cert DB-update.crt --output "^" "^"
+	find $boot_dir -name *.EFI -type f | xargs -I "^" sbverify --cert DB-update.crt "^"
 	
 	
-	find $boot_dir -name vmlinuz* -type f | xargs -I "^" sbsign --key DB.key --cert DB.crt --output "^" "^"
-	find $boot_dir -name vmlinuz* -type f | xargs -I "^" sbverify --cert DB.crt "^"
+	find $boot_dir -name vmlinuz* -type f | xargs -I "^" sbsign --key DB-update.key --cert DB-update.crt --output "^" "^"
+	find $boot_dir -name vmlinuz* -type f | xargs -I "^" sbverify --cert DB-update.crt "^"
 	
-	UpdateVars dbx DBX.auth
-	UpdateVars db DB.auth
-	UpdateVars KEK KEK.auth
-	UpdateVars PK PK.auth
+	sign-efi-sig-list -k KEK-update.key -c KEK-update.crt dbx DB-hash-blacklist.esl DB-hash-blacklist.auth
+	efi-updatevar -f DB-hash-blacklist.auth dbx
+	efi-updatevar -f DB-update.auth db
+	efi-updatevar -f KEK-update.auth KEK
+	efi-updatevar -f PK-update.auth PK
 	
-	echo "Would you like to copy your keys to $efi_boot_dir for uefi enrollment"
+	echo "Would you like to copy your keys to ".$efi_boot_dir." for uefi enrollment"
 	echo "in UEFI firmware settings? (y/n): "
-	echo "\n"
+	echo ""
 	read cpy_keys
 	
 	if [ $cpy_keys = "y" ]; then
-		cp *.cer $efi_boot_dir
 		cp *.auth $efi_boot_dir
 		cp *.esl $efi_boot_dir
 		cp *.crt $efi_boot_dir
@@ -255,8 +249,6 @@ if [ $custom_sb = "y" ]; then
 	cd ..
 	
 fi
-
-cp *.txt /boot/efi/EFI/BOOT
 
 # Filesystem and Integrity Monitoring
 apt install -y sxid
